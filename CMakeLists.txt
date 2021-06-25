@@ -580,7 +580,7 @@ if(ANDROID)
 	list(APPEND PULSEVIEW_LINK_LIBS "-llog")
 endif()
 
-set(INPUT_FILES_LIST ${pulseview_SOURCES} ${pulseview_RESOURCES_RCC} ${QM_FILES})
+set(INPUT_FILES_LIST ${pulseview_HEADERS} ${pulseview_SOURCES} ${pulseview_RESOURCES_RCC} ${QM_FILES})
 if(ANDROID)
 	add_library(${PROJECT_NAME} SHARED ${INPUT_FILES_LIST})
 else()
