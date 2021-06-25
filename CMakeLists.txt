@@ -93,12 +93,17 @@ if(ANDROID)
 	list(APPEND PKGDEPS libsigrokandroidutils>=0.1.0)
 endif()
 
-find_package(PkgConfig)
-pkg_check_modules(LIBSRCXX ${LIBSR_CXX_BINDING})
-if(NOT LIBSRCXX_FOUND OR NOT LIBSRCXX_VERSION)
-	message(FATAL_ERROR "libsigrok C++ bindings missing, check libsigrok's 'configure' output (missing dependencies?)")
+if(NOT WIN32)
+
+	find_package(PkgConfig)
+
+	pkg_check_modules(LIBSRCXX ${LIBSR_CXX_BINDING})
+	if(NOT LIBSRCXX_FOUND OR NOT LIBSRCXX_VERSION)
+		message(FATAL_ERROR "libsigrok C++ bindings missing, check libsigrok's 'configure' output (missing dependencies?)")
+	endif()
+	pkg_check_modules(PKGDEPS REQUIRED ${PKGDEPS})
+
 endif()
-pkg_check_modules(PKGDEPS REQUIRED ${PKGDEPS})
 
 set(CMAKE_AUTOMOC TRUE)
 
@@ -106,12 +111,14 @@ find_package(Qt5 5.3 COMPONENTS Core Gui LinguistTools Widgets Svg REQUIRED)
 
 message(STATUS "Qt version: ${Qt5_VERSION}")
 
-if(WIN32)
-	# MXE workaround: Use pkg-config to find Qt5 libs.
-	# https://github.com/mxe/mxe/issues/1642
-	# Not required (and doesn't work) on MSYS2.
-	if(NOT DEFINED ENV{MSYSTEM})
-		pkg_check_modules(QT5ALL REQUIRED Qt5Widgets>=5.3 Qt5Gui>=5.3 Qt5Svg>=5.3)
+if(NOT WIN32)
+	if(WIN32)
+		# MXE workaround: Use pkg-config to find Qt5 libs.
+		# https://github.com/mxe/mxe/issues/1642
+		# Not required (and doesn't work) on MSYS2.
+		if(NOT DEFINED ENV{MSYSTEM})
+			pkg_check_modules(QT5ALL REQUIRED Qt5Widgets>=5.3 Qt5Gui>=5.3 Qt5Svg>=5.3)
+		endif()
 	endif()
 endif()
 
@@ -198,6 +205,7 @@ memaccess_check_unaligned_le(HAVE_UNALIGNED_LITTLE_ENDIAN_ACCESS)
 #===============================================================================
 #= Config Header
 #-------------------------------------------------------------------------------
+
 
 set(PV_TITLE PulseView)
 set(PV_VERSION_STRING "0.5.0")
@@ -383,6 +391,26 @@ set(pulseview_HEADERS
 	pv/widgets/timestampspinbox.hpp
 	pv/widgets/wellarray.hpp
 )
+
+
+#===============================================================================
+# Generate a list of all .c & .h files in the current directory and sub directores.
+file(
+     GLOB_RECURSE source_list RELATIVE
+     "${CMAKE_CURRENT_SOURCE_DIR}"
+     *.hpp *.cpp *.h *.c
+    )
+foreach(source IN LISTS source_list)
+    get_filename_component(source_path "${source}" PATH)
+    string(REPLACE "/" "\\" source_path_msvc "${source_path}")
+    source_group("${source_path_msvc}" FILES "${source}")
+	message(STATUS "Source - ${source_path_msvc} - ${source}")
+endforeach()  
+
+
+message(STATUS "Tree reorganized")
+#===============================================================================
+
 
 set(pulseview_RESOURCES
 	pulseview.qrc
